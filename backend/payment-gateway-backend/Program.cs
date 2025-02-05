@@ -41,7 +41,6 @@ namespace payment_gateway_backend
 
             app.UseAuthorization();
 
-
             app.MapControllers();
 
             app.Run();
