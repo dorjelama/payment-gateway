@@ -1,4 +1,5 @@
 
+using payment_gateway_backend.Configurations;
 using Serilog;
 
 namespace payment_gateway_backend
@@ -17,6 +18,8 @@ namespace payment_gateway_backend
                     .WriteTo.Console()
                     .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
             );
+
+            builder.Services.AddAutoMapper(typeof(MappingProfile));
 
             builder.Services.AddControllers();
 
