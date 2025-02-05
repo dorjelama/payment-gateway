@@ -1,4 +1,6 @@
 
+using Serilog;
+
 namespace payment_gateway_backend
 {
     public class Program
@@ -8,13 +10,22 @@ namespace payment_gateway_backend
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Host.UseSerilog((context, services, configuration) =>
+                configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .Enrich.FromLogContext()
+                    .WriteTo.Console()
+                    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+            );
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
+
+            app.UseSerilogRequestLogging();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
