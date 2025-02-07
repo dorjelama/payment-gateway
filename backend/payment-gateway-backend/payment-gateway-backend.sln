@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35731.43 d17.13
+VisualStudioVersion = 17.13.35731.43
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "payment-gateway-backend", "payment-gateway-backend.csproj", "{A9601D8E-FB5A-45C0-A22E-B5474CE70478}"
 EndProject

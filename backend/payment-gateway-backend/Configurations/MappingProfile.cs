@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using payment_gateway_backend.Entities;
 using payment_gateway_backend.Models;
 
 namespace payment_gateway_backend.Configurations
