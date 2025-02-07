@@ -1,6 +1,7 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using payment_gateway_backend.Entities;
-using payment_gateway_backend.Models;
+using payment_gateway_backend.Helpers;
+using payment_gateway_backend.Models.Auth;
 using payment_gateway_backend.Repositories.Interfaces;
 using payment_gateway_backend.Services.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
@@ -13,11 +14,13 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IConfiguration _config;
+    private readonly JwtHelper _jwtHelper;
 
-    public AuthService(IUserRepository userRepository, IConfiguration config)
+    public AuthService(IUserRepository userRepository, IConfiguration config, JwtHelper jwtHelper)
     {
         _userRepository = userRepository;
         _config = config;
+        _jwtHelper = jwtHelper;
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
@@ -29,30 +32,7 @@ public class AuthService : IAuthService
             return new AuthResponseDto { Message = "Invalid credentials" };
         }
 
-        var token = GenerateJwtToken(user);
+        var token = _jwtHelper.GenerateToken(user.Username);
         return new AuthResponseDto { Token = token, Message = "Login successful" };
-    }
-
-    private string GenerateJwtToken(User user)
-    {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:Key"]));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
-        {
-        new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
-        new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
-        new Claim(ClaimTypes.Email, user.Email)
-    };
-
-        var token = new JwtSecurityToken(
-            issuer: _config["JwtSettings:Issuer"],
-            audience: _config["JwJwtSettingst:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddHours(2),
-            signingCredentials: credentials
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

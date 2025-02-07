@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using payment_gateway_backend.Entities;
-using payment_gateway_backend.Models;
+using payment_gateway_backend.Models.EventLog;
+using payment_gateway_backend.Models.Payment;
+using payment_gateway_backend.Models.PaymentTransaction;
 
 namespace payment_gateway_backend.Configurations
 {
@@ -11,8 +13,16 @@ namespace payment_gateway_backend.Configurations
             CreateMap<PaymentRequestDto, PaymentTransaction>();
 
             CreateMap<PaymentTransaction, PaymentResponseDto>()
-           .ForMember(dest => dest.Message, opt => opt.MapFrom(src => GetPaymentMessage(src.Status)));
+                .ForMember(dest => dest.Message, opt => opt.MapFrom(src => GetPaymentMessage(src.Status)));
+
+            CreateMap<PaymentTransaction, PaymentTransactionDto>();
+            CreateMap<CreatePaymentTransactionDto, PaymentTransaction>();
+
+            CreateMap<EventLog, EventLogDto>()
+                .ForMember(dest => dest.EventData, opt => opt.MapFrom(src => src.Payload));
+            CreateMap<CreateEventLogDto, EventLog>();
         }
+
         private static string GetPaymentMessage(string status)
         {
             return status switch

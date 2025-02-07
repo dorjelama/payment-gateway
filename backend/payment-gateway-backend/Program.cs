@@ -5,10 +5,8 @@ using Microsoft.OpenApi.Models;
 using payment_gateway_backend.Configurations;
 using payment_gateway_backend.Data;
 using payment_gateway_backend.Helpers;
-using payment_gateway_backend.Repositories;
 using payment_gateway_backend.Repositories.Implementations;
 using payment_gateway_backend.Repositories.Interfaces;
-using payment_gateway_backend.Services;
 using payment_gateway_backend.Services.Implementations;
 using payment_gateway_backend.Services.Interfaces;
 using Serilog;
@@ -66,12 +64,15 @@ public class Program
                );
         builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-        builder.Services.AddSingleton<JwtHelper>();
         var jwtSettings = builder.Configuration.GetSection("JwtSettings");
         var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
-        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -93,13 +94,17 @@ public class Program
             return new Publisher(config);
         });
 
+        builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+        builder.Services.AddScoped<IEventLogRepository, EventLogRepository>();
         builder.Services.AddScoped<IAuthService, AuthService>();
-        builder.Services.AddSingleton<InMemoryPaymentTransactionRepository>();
-        builder.Services.AddSingleton<InMemoryEventLogRepository>();
         builder.Services.AddSingleton<IPaymentSimulator, PaymentSimulatorService>();
+        builder.Services.AddScoped<IPaymentProcessService, PaymentProcessService>();
+        builder.Services.AddScoped<IPaymentTransactionService, PaymentTransactionService>();
+        builder.Services.AddScoped<JwtHelper>();
+        builder.Services.AddScoped<IEventLogService, EventLogService>();
         builder.Services.AddHostedService<Consumer>();
-        builder.Services.AddScoped<EventLogService>();
 
         var app = builder.Build();
 

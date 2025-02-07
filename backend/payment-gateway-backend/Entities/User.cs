@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-
 namespace payment_gateway_backend.Entities;
 public class User
 {

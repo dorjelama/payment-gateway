@@ -1,4 +1,4 @@
-﻿namespace payment_gateway_backend.Models
+﻿namespace payment_gateway_backend.Models.Auth
 {
     public class AuthResponseDto
     {

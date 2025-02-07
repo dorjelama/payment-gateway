@@ -1,6 +1,6 @@
 ﻿using payment_gateway_backend.Models;
-using payment_gateway_backend.Repositories;
-using payment_gateway_backend.Services;
+using payment_gateway_backend.Models.Payment;
+using payment_gateway_backend.Models.PaymentTransaction;
 using payment_gateway_backend.Services.Interfaces;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -17,13 +17,11 @@ public class Consumer : BackgroundService
     private readonly IPaymentSimulator _simulator;
     private readonly string _exchangeName;
     private readonly ILogger<Consumer> _logger;
-    private readonly InMemoryPaymentTransactionRepository _transactionRepository;
     public Consumer(
         IServiceProvider services,
         IConfiguration config,
         IPaymentSimulator simulator,
-        ILogger<Consumer> logger,
-        InMemoryPaymentTransactionRepository transactionRepository)
+        ILogger<Consumer> logger)
     {
         _services = services;
         _logger = logger;
@@ -39,7 +37,6 @@ public class Consumer : BackgroundService
         _exchangeName = config["RabbitMQ:ExchangeName"];
         _channel.ExchangeDeclareAsync(exchange: _exchangeName, type: ExchangeType.Fanout).GetAwaiter().GetResult();
         _simulator = simulator;
-        _transactionRepository = transactionRepository;
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -51,7 +48,8 @@ public class Consumer : BackgroundService
         {
             using var scope = _services.CreateScope();
             var publisher = scope.ServiceProvider.GetRequiredService<Publisher>();
-            var eventLog = scope.ServiceProvider.GetRequiredService<EventLogService>();
+            var _paymentTransactionRepository = scope.ServiceProvider.GetRequiredService<IPaymentTransactionService>();
+            var _eventLogService = scope.ServiceProvider.GetRequiredService<IEventLogService>();
 
             try
             {
@@ -66,7 +64,7 @@ public class Consumer : BackgroundService
                     var initiatedEvent = JsonSerializer.Deserialize<PaymentInitiatedEvent>(message);
 
                     // Optional: check if simulation is necessary by verifying the transaction's current status.
-                    var transaction = _transactionRepository.GetTransaction(initiatedEvent.TransactionId);
+                    var transaction = await _paymentTransactionRepository.GetTransactionByIdAsync(initiatedEvent.TransactionId);
                     if (transaction != null && transaction.Status != "Initiated")
                     {
                         _logger.LogInformation("Skipping simulation for Transaction {TransactionId} as its status is already updated.", initiatedEvent.TransactionId);
@@ -82,7 +80,10 @@ public class Consumer : BackgroundService
                     });
 
                     // Update transaction status in the repository
-                    bool updated = _transactionRepository.UpdateTransactionStatus(initiatedEvent.TransactionId, simulatedResult.Status);
+                    bool updated = await _paymentTransactionRepository.UpdateTransactionStatusAsync(
+                                                                    initiatedEvent.TransactionId,
+                                                                    new UpdateTransactionStatusDto() { Status = simulatedResult.Status });
+
                     if (!updated)
                     {
                         _logger.LogWarning("Transaction not found: {TransactionId}", initiatedEvent.TransactionId);
@@ -97,7 +98,7 @@ public class Consumer : BackgroundService
                     }, "payment.status.updated");
 
                     // Log the event for monitoring
-                    await eventLog.LogEvent("payment.status.updated", new { initiatedEvent, simulatedResult });
+                    await _eventLogService.AddLogAsync("Payment Status Updated", $"Transaction Id: {initiatedEvent.TransactionId} | Status: {simulatedResult.Status}");
                 }
                 else
                 {
