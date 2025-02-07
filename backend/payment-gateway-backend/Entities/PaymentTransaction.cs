@@ -5,7 +5,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 public class PaymentTransaction
 {
     [Key]
-    public Guid TransactionId { get; set; } = Guid.NewGuid(); // Primary Key
+    public Guid Id { get; set; } = Guid.NewGuid(); // Primary Key
+    public Guid TransactionId { get; set; }
 
     [Required]
     public Guid UserId { get; set; } // Foreign Key
