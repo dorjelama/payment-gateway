@@ -1,0 +1,46 @@
+.event-logs-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+mat-card {
+  padding: 20px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.logs-table {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.loading {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.error {
+  text-align: center;
+  color: red;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+.no-logs {
+  text-align: center;
+  font-style: italic;
+  color: #888;
+  margin-top: 20px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}

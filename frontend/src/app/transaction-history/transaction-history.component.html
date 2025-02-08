@@ -1,0 +1,142 @@
+<div class="transaction-history">
+  <mat-card>
+    <!-- Title -->
+    <h2>Transaction History</h2>
+
+    <!-- Filters Section -->
+    <div class="filter-container">
+      <form (ngSubmit)="onFilterSubmit()" class="filters">
+        <div
+          fxLayout="row"
+          fxLayoutGap="16px"
+          fxLayoutAlign="start center"
+          class="filter-row"
+        >
+          <!-- Start Date -->
+          <mat-form-field appearance="outline" fxFlex="20%">
+            <mat-label>Start Date</mat-label>
+            <input
+              matInput
+              [matDatepicker]="startDatePicker"
+              placeholder="Choose a start date"
+              [(ngModel)]="startDate"
+              name="startDate"
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="startDatePicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #startDatePicker></mat-datepicker>
+          </mat-form-field>
+
+          <!-- End Date -->
+          <mat-form-field appearance="outline" fxFlex="20%">
+            <mat-label>End Date</mat-label>
+            <input
+              matInput
+              [matDatepicker]="endDatePicker"
+              placeholder="Choose an end date"
+              [(ngModel)]="endDate"
+              name="endDate"
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="endDatePicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #endDatePicker></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Status -->
+          <mat-form-field appearance="outline" fxFlex="20%">
+            <mat-label>Status</mat-label>
+            <mat-select [(ngModel)]="status" name="status">
+              <mat-option value="">Select Any One</mat-option>
+              <mat-option value="Pending">Pending</mat-option>
+              <mat-option value="Completed">Completed</mat-option>
+              <mat-option value="Failed">Failed</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Submit Button -->
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            fxFlex="auto"
+            style="height: 48px; min-width: 120px"
+          >
+            Apply Filters
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading">
+      <mat-progress-spinner
+        mode="indeterminate"
+        diameter="50"
+      ></mat-progress-spinner>
+      <p>Loading transactions...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="error">{{ error }}</div>
+
+    <!-- Transactions Table -->
+    <div *ngIf="!loading && !error">
+      <table mat-table [dataSource]="transactions" class="transactions-table">
+        <!-- Transaction ID Column -->
+        <ng-container matColumnDef="transactionId">
+          <th mat-header-cell *matHeaderCellDef>Transaction ID</th>
+          <td mat-cell *matCellDef="let transaction">
+            {{ transaction.transactionId }}
+          </td>
+        </ng-container>
+
+        <!-- Amount Column -->
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef>Amount</th>
+          <td mat-cell *matCellDef="let transaction">
+            {{ transaction.amount | currency : transaction.currency }}
+          </td>
+        </ng-container>
+
+        <!-- Currency Column -->
+        <ng-container matColumnDef="currency">
+          <th mat-header-cell *matHeaderCellDef>Currency</th>
+          <td mat-cell *matCellDef="let transaction">
+            {{ transaction.currency }}
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let transaction">
+            <span [class]="transaction.status.toLowerCase()">{{
+              transaction.status
+            }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Created At Column -->
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Created At</th>
+          <td mat-cell *matCellDef="let transaction">
+            {{ transaction.createdAt | date : "medium" }}
+          </td>
+        </ng-container>
+
+        <!-- Header and Row Definitions -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+
+      <!-- No Transactions Message -->
+      <div *ngIf="transactions.length === 0" class="no-transactions">
+        No transactions found for the selected filters.
+      </div>
+    </div>
+  </mat-card>
+</div>

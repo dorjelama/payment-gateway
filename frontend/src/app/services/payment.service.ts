@@ -1,55 +1,45 @@
 import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
-import { BehaviorSubject, Observable, interval } from "rxjs";
-import { switchMap } from "rxjs/operators";
-import { Payment, Transaction } from "../models/payment.model";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { Observable } from "rxjs";
+import { environment } from "../../environments/environment";
+import { AuthService } from "./auth.service";
 
 @Injectable({
   providedIn: "root",
 })
 export class PaymentService {
-  private transactions = new BehaviorSubject<Transaction[]>([]);
+  private baseUrl = environment.apiUrl;
 
-  // Simulated transactions for demo
-  private mockTransactions: Transaction[] = [];
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
-  constructor(private http: HttpClient) {
-    // Start polling for transaction updates
-    this.startPolling();
-  }
+  processPayment(paymentData: any): Observable<any> {
+    const token = this.authService.getToken();
+    const headers = new HttpHeaders()
+      .set("Authorization", `Bearer ${token}`)
+      .set("Content-Type", "application/json");
 
-  processPayment(payment: Payment): Observable<any> {
-    // Simulate API call
-    const mockTransaction: Transaction = {
-      id: Math.random().toString(36).substr(2, 9),
-      amount: payment.amount,
-      currency: payment.currency,
-      status: "pending",
-      timestamp: new Date(),
-      last4: payment.cardNumber.slice(-4),
-    };
-
-    this.mockTransactions.push(mockTransaction);
-    this.transactions.next(this.mockTransactions);
-
-    return new Observable((subscriber) => {
-      setTimeout(() => {
-        mockTransaction.status = Math.random() > 0.5 ? "completed" : "failed";
-        this.transactions.next(this.mockTransactions);
-        subscriber.next({ success: true });
-        subscriber.complete();
-      }, 2000);
+    return this.http.post(`${this.baseUrl}/api/Payments/Process`, paymentData, {
+      headers,
     });
   }
 
-  getTransactions(): Observable<Transaction[]> {
-    return this.transactions.asObservable();
-  }
+  getTransactions(
+    startDate: string | null, // Accepts formatted date strings
+    endDate: string | null, // Accepts formatted date strings
+    status: string
+  ): Observable<any[]> {
+    const token = this.authService.getToken();
+    const headers = new HttpHeaders().set("Authorization", `Bearer ${token}`);
 
-  private startPolling() {
-    interval(5000).subscribe(() => {
-      // In a real app, this would fetch updates from the server
-      this.transactions.next(this.mockTransactions);
+    // Construct query parameters dynamically
+    const params: Record<string, string> = {};
+    if (startDate) params["StartDate"] = startDate;
+    if (endDate) params["EndDate"] = endDate;
+    if (status) params["Status"] = status;
+
+    return this.http.get<any[]>(`${this.baseUrl}/api/Transactions`, {
+      headers,
+      params,
     });
   }
 }

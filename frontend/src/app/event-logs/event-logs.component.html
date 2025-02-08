@@ -1,0 +1,65 @@
+<div class="event-logs-container">
+  <mat-card>
+    <h2>Event Logs</h2>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading">
+      <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+      <p>Loading logs...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="error">{{ error }}</div>
+
+    <!-- No Logs Message -->
+    <div *ngIf="!loading && !error && totalLogs === 0" class="no-logs">
+      No logs available.
+    </div>
+
+    <!-- Logs Table -->
+    <div *ngIf="!loading && !error && totalLogs > 0">
+      <table mat-table [dataSource]="paginatedLogs" class="logs-table">
+        <!-- Event Type Column -->
+        <ng-container matColumnDef="eventType">
+          <th mat-header-cell *matHeaderCellDef>Event Type</th>
+          <td mat-cell *matCellDef="let log">{{ log.eventType }}</td>
+        </ng-container>
+
+        <!-- Event Data Column -->
+        <ng-container matColumnDef="eventData">
+          <th mat-header-cell *matHeaderCellDef>Event Data</th>
+          <td mat-cell *matCellDef="let log">{{ log.eventData }}</td>
+        </ng-container>
+
+        <!-- Timestamp Column -->
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Timestamp</th>
+          <td mat-cell *matCellDef="let log">{{ log.createdAt | date : 'medium' }}</td>
+        </ng-container>
+
+        <!-- Header and Row Definitions -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+
+      <!-- Pagination Controls -->
+      <div *ngIf="totalLogs > pageSize" class="pagination">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="previousPage()"
+          [disabled]="currentPage === 1">
+          Previous
+        </button>
+        <!-- <span>Page {{ currentPage }} of {{ totalPages }}</span> -->
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages">
+          Next
+        </button>
+      </div>
+    </div>
+  </mat-card>
+</div>
