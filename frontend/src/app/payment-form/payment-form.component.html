@@ -1,0 +1,112 @@
+<div class="payment-form">
+  <h2>Make a Payment</h2>
+
+  <!-- Success Message -->
+  <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+  <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="amount">Amount</label>
+      <input type="number" id="amount" formControlName="amount" />
+      <div
+        *ngIf="
+          paymentForm.get('amount')?.invalid &&
+          paymentForm.get('amount')?.touched
+        "
+        class="error"
+      >
+        Amount is required and must be greater than 0.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="currency">Currency</label>
+      <select id="currency" formControlName="currency">
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+        <option value="GBP">GBP</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="customerName">Customer Name</label>
+      <input type="text" id="customerName" formControlName="customerName" />
+      <div
+        *ngIf="
+          paymentForm.get('customerName')?.invalid &&
+          paymentForm.get('customerName')?.touched
+        "
+        class="error"
+      >
+        Customer name is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="customerEmail">Customer Email</label>
+      <input type="email" id="customerEmail" formControlName="customerEmail" />
+      <div
+        *ngIf="
+          paymentForm.get('customerEmail')?.invalid &&
+          paymentForm.get('customerEmail')?.touched
+        "
+        class="error"
+      >
+        A valid email is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="paymentMethod">Payment Method</label>
+      <select id="paymentMethod" formControlName="paymentMethod">
+        <option value="CARD">Card</option>
+        <option value="BANK_TRANSFER">Bank Transfer</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="cardOrAccountNumber">Card/Account Number</label>
+      <input
+        type="text"
+        id="cardOrAccountNumber"
+        formControlName="cardOrAccountNumber"
+      />
+      <div
+        *ngIf="
+          paymentForm.get('cardOrAccountNumber')?.invalid &&
+          paymentForm.get('cardOrAccountNumber')?.touched
+        "
+        class="error"
+      >
+        Card/Account number must be 16 digits.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="cvv">CVV</label>
+      <input type="text" id="cvv" formControlName="cvv" />
+      <div
+        *ngIf="
+          paymentForm.get('cvv')?.invalid && paymentForm.get('cvv')?.touched
+        "
+        class="error"
+      >
+        CVV must be 3 or 4 digits.
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="!paymentForm.valid || processing">
+      {{ processing ? "Processing..." : "Submit Payment" }}
+    </button>
+  </form>
+</div>
+<div *ngIf="transactionId" class="tracking-link">
+  <p>
+    Your transaction is being processed. You can track it using the ID:
+    <strong>{{ transactionId }}</strong>.
+  </p>
+  <a [routerLink]="['/track']" [queryParams]="{ id: transactionId }">Track Transaction</a>
+</div>

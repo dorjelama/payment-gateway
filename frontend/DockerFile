@@ -1,0 +1,22 @@
+# Stage 1: Build the Angular app
+FROM node:20-alpine AS build
+WORKDIR /app
+# Copy package.json and package-lock.json to install dependencies
+COPY package*.json ./
+RUN npm install
+# Copy the rest of your source code
+COPY . .
+# Build the Angular project
+RUN npm run build
+
+# Stage 2: Serve the Angular app with Nginx
+FROM nginx:alpine
+# Remove default nginx static assets
+RUN rm -rf /usr/share/nginx/html/*
+# Copy the Angular build output from the previous stage.
+# Adjust the path below based on your angular.json "outputPath" (commonly "dist/<your-angular-app-name>")
+COPY --from=build /app/dist/frontend/usr/share/nginx/html
+# Expose port 80 (Nginx default)
+EXPOSE 80
+# Start Nginx in the foreground
+CMD ["nginx", "-g", "daemon off;"]
