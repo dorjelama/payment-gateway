@@ -14,15 +14,15 @@ public static class DbInitializer
 
             context.Database.Migrate();
 
-            if (!context.Users.Any(u => u.Username == "admin"))
+            if (!context.Users.Any(u => u.Username == "testuser"))
             {
                 var adminUser = new User
                 {
                     UserId = Guid.NewGuid(),
-                    Username = "admin",
-                    Email = "admin@example.com",
-                    FullName = "Admin User",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("adminpassword"),
+                    Username = "testuser",
+                    Email = "testuser@example.com",
+                    FullName = "Test User",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("testpassword"),
                     CreatedAt = DateTime.UtcNow
                 };
 
