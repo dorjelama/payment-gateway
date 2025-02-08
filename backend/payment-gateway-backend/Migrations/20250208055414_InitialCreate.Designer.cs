@@ -12,8 +12,8 @@ using payment_gateway_backend.Data;
 namespace payment_gateway_backend.Migrations
 {
     [DbContext(typeof(PaymentGatewayDbContext))]
-    [Migration("20250207212247_UniqueTransactionId")]
-    partial class UniqueTransactionId
+    [Migration("20250208055414_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -1,88 +1,66 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using payment_gateway_backend.Models;
-using Serilog;
+using payment_gateway_backend.Configurations;
+using payment_gateway_backend.Entities;
+using payment_gateway_backend.Models.Payment;
+using payment_gateway_backend.Repositories;
+using payment_gateway_backend.Services.Implementations;
+using payment_gateway_backend.Services.Interfaces;
 
 namespace payment_gateway_backend.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class PaymentsController : ControllerBase
 {
-    private readonly IMapper _mapper;
     private readonly ILogger<PaymentsController> _logger;
-    public PaymentsController(IMapper mapper, ILogger<PaymentsController> logger)
+    private readonly IMapper _mapper;
+    private readonly Publisher _publisher;
+    private readonly IPaymentProcessService _paymentProcessService;
+    public PaymentsController(
+        ILogger<PaymentsController> logger,
+        IMapper mapper,
+        Publisher publisher,
+        IPaymentProcessService paymentProcessService)
     {
-        _mapper = mapper;
         _logger = logger;
+        _mapper = mapper;
+        _publisher = publisher;
+        _paymentProcessService = paymentProcessService;
     }
 
-    [Authorize]
-    [HttpPost("ProcessPayment")]
+    [HttpPost("Process")]
     public async Task<IActionResult> ProcessPayment([FromBody] PaymentRequestDto request)
     {
-        if (!IsValidPaymentRequest(request, out string validationMessage))
+        try
         {
-            _logger.LogWarning("Invalid payment request received: {ValidationMessage}", validationMessage);
-            return BadRequest(new { message = validationMessage });
+            var response = await _paymentProcessService.ProcessPaymentAsync(request);
+            return Accepted(response);
         }
-
-        _logger.LogInformation("Processing payment for {CustomerEmail}, Amount: {Amount} {Currency}",
-            request.CustomerEmail, request.Amount, request.Currency);
-
-        var transaction = await SimulatePaymentGateway(request);
-
-        _logger.LogInformation("Payment {Status} for {CustomerEmail}, Transaction ID: {TransactionId}",
-            transaction.Status, transaction.CustomerEmail, transaction.TransactionId);
-
-        return Ok(_mapper.Map<PaymentResponseDto>(transaction));
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An internal server error occurred. Please try again later." });
+        }
     }
 
-    //need to make this api and call it from process payment
-    private async Task<PaymentTransaction> SimulatePaymentGateway(PaymentRequestDto request)
+    [HttpPost("SimulatePaymentGateway")]
+    public async Task<IActionResult> SimulatePaymentGateway([FromBody] PaymentRequestDto request, [FromServices] IPaymentSimulator simulator)
     {
-        await Task.Delay(3000);
-
-        string[] statuses = { "Success", "Pending", "Failed" };
-        Random random = new Random();
-        string status = statuses[random.Next(statuses.Length)];
-
-        return new PaymentTransaction
+        try
         {
-            TransactionId = Guid.NewGuid(),
-            Amount = request.Amount,
-            Currency = request.Currency,
-            CustomerName = request.CustomerName,
-            CustomerEmail = request.CustomerEmail,
-            PaymentMethod = request.PaymentMethod,
-            Status = status
-        };
-    }
-    private bool IsValidPaymentRequest(PaymentRequestDto request, out string validationMessage)
-    {
-        if (request.Amount <= 0)
-        {
-            validationMessage = "Amount must be greater than zero.";
-            return false;
+            var transaction = await simulator.SimulatePaymentAsync(request);
+            return Ok(transaction);
         }
-        if (string.IsNullOrWhiteSpace(request.Currency))
+        catch (Exception ex)
         {
-            validationMessage = "Currency is required.";
-            return false;
+            _logger.LogError(ex, "Error in simulation endpoint for {Email}", request.CustomerEmail);
+            return StatusCode(500, "Simulation failed");
         }
-        if (string.IsNullOrWhiteSpace(request.CustomerEmail))
-        {
-            validationMessage = "Customer email is required.";
-            return false;
-        }
-        if (string.IsNullOrWhiteSpace(request.PaymentMethod))
-        {
-            validationMessage = "Payment method is required.";
-            return false;
-        }
-
-        validationMessage = string.Empty;
-        return true;
     }
 }
