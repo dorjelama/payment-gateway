@@ -95,20 +95,65 @@ public class Consumer : BackgroundService
                         TransactionId = initiatedEvent.TransactionId,
                         Status = simulatedResult.Status,
                         UpdatedAt = DateTime.UtcNow
-                    }, "payment.status.updated");
+                    }, $"payment.status.{simulatedResult.Status}");
 
                     // Log the event for monitoring
                     await _eventLogService.AddLogAsync("Payment Status Updated", $"Transaction Id: {initiatedEvent.TransactionId} | Status: {simulatedResult.Status}");
                 }
                 else
                 {
-                    // For events that don't require simulation, simply log and skip.
-                    _logger.LogInformation("Event with routing key {RoutingKey} does not require simulation. Skipping processing.", routingKey);
+                    var body = ea.Body.ToArray();
+                    var message = Encoding.UTF8.GetString(body);
+                    var updatedEvent = JsonSerializer.Deserialize<PaymentStatusUpdatedEvent>(message);
+
+                    if (updatedEvent.Status != "Pending")
+                    {
+                        _logger.LogInformation("Transaction Completed");
+                        return;
+                    }
+                    else
+                    {
+                        var simulatedStatus = await _simulator.SimulateTransactionUpdateAsync(updatedEvent!.TransactionId);
+
+                        bool updated = await _paymentTransactionRepository.UpdateTransactionStatusAsync(
+                                                                        updatedEvent!.TransactionId,
+                                                                        new UpdateTransactionStatusDto() { Status = simulatedStatus });
+
+                        if (!updated)
+                        {
+                            _logger.LogWarning("Transaction not found: {TransactionId}", updatedEvent!.TransactionId);
+                        }
+
+                        // Publish the status update event
+                        await publisher.PublishEventAsync(new PaymentStatusUpdatedEvent
+                        {
+                            TransactionId = updatedEvent!.TransactionId,
+                            Status = simulatedStatus,
+                            UpdatedAt = DateTime.UtcNow
+                        }, $"payment.status.{simulatedStatus}");
+
+                        await _eventLogService.AddLogAsync("Payment Status Updated", $"Transaction Id: {updatedEvent.TransactionId} | Status: {simulatedStatus}");
+
+                        // For events that don't require simulation, simply log and skip.
+                        _logger.LogInformation("Event with routing key {RoutingKey} does not require simulation. Skipping processing.", routingKey);
+                    }
+
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing payment event");
+
+                // Create and publish a failure event
+                var failureEvent = new PaymentFailureEvent
+                {
+                    TransactionId = Guid.Parse(ea.BasicProperties.CorrelationId), // Extract from message properties
+                    ErrorMessage = ex.Message,
+                    Timestamp = DateTime.UtcNow,
+                    CorrelationId = ea.BasicProperties.CorrelationId
+                };
+
+                await publisher.PublishFailureEvent(failureEvent);
             }
         };
 

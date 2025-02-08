@@ -31,6 +31,16 @@ public class Program
         builder.Services.AddDbContext<PaymentGatewayDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
         );
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAll",
+                policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+        });
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(
@@ -105,11 +115,14 @@ public class Program
         builder.Services.AddScoped<JwtHelper>();
         builder.Services.AddScoped<IEventLogService, EventLogService>();
         builder.Services.AddHostedService<Consumer>();
+        builder.Services.AddSingleton<INotificationService, EmailNotificationService>();
+        builder.Services.AddHostedService<FailureConsumer>();
 
         var app = builder.Build();
 
         DbInitializer.Seed(app.Services);
 
+        app.UseCors("AllowAll");
         app.UseSerilogRequestLogging();
 
         app.UseSwagger();

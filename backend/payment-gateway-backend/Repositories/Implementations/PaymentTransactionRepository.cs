@@ -32,17 +32,29 @@ namespace payment_gateway_backend.Repositories.Implementations
 
         public async Task<bool> UpdateTransactionStatusAsync(Guid transactionId, string newStatus)
         {
-            var transaction = await _context.Transactions.FirstOrDefaultAsync(t => t.TransactionId == transactionId);
-            if (transaction == null)
+            var oldTransaction = await _context.Transactions.FirstOrDefaultAsync(t => t.TransactionId == transactionId);
+            if (oldTransaction == null)
             {
                 return false;
             }
 
-            transaction.Status = newStatus;
+            PaymentTransaction newTransaction = new()
+            {
+                TransactionId = transactionId,
+                Amount = oldTransaction.Amount,
+                CreatedAt = DateTime.UtcNow,
+                Currency = oldTransaction.Currency,
+                PaymentMethod = oldTransaction.PaymentMethod,
+                Status = newStatus,
+                UserId = oldTransaction.UserId
+            };
+
+            await _context.Transactions.AddAsync(newTransaction);
+
             await _context.SaveChangesAsync();
             return true;
         }
-        public async Task<IEnumerable<PaymentTransaction>> GetTransactionsAsync(DateTime? startDate, DateTime? endDate, string? status, Guid? userId)
+        public async Task<IEnumerable<PaymentTransaction>> GetTransactionsAsync(DateTime? startDate, DateTime? endDate, string? status)
         {
             var query = _context.Transactions.AsQueryable();
 
@@ -61,12 +73,7 @@ namespace payment_gateway_backend.Repositories.Implementations
                 query = query.Where(t => t.Status == status);
             }
 
-            if (userId.HasValue)
-            {
-                query = query.Where(t => t.UserId == userId.Value);
-            }
-
-            return await query.ToListAsync();
+            return await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
     }
 }

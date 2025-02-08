@@ -54,24 +54,76 @@ public class PaymentProcessService : IPaymentProcessService
             UserId = _jwtHelper.GetUserIdFromToken()
         };
 
-        await _transactionRepository.AddTransactionAsync(transaction);
-
-        await _publisher.PublishEventAsync(new PaymentInitiatedEvent
+        try
         {
+            await _transactionRepository.AddTransactionAsync(transaction);
+
+            await _publisher.PublishEventAsync(new PaymentInitiatedEvent
+            {
+                TransactionId = transactionId,
+                Amount = request.Amount,
+                Currency = request.Currency,
+                CustomerEmail = request.CustomerEmail
+            }, "payment.initiated");
+
+            _logger.LogInformation($"Payment initiated for {request.CustomerEmail}, Transaction ID: {transactionId}");
+            await _eventLogService.AddLogAsync("Payment Initiated", $"Payment initiated for {request.CustomerEmail}, Transaction ID: {transactionId}");
+
+            return new PaymentResponseDto
+            {
+                TransactionId = transactionId,
+                Message = "Payment processing started."
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing payment");
+            throw;
+        }
+    }
+    public async Task<PaymentResponseDto> RetryProcessPaymentAsync(PaymentRequestDto request, Guid transactionId)
+    {
+
+        _logger.LogInformation($"Reprocessing payment for transaction {transactionId}");
+
+        var transaction = new PaymentTransaction
+        {
+            Id = Guid.NewGuid(),
             TransactionId = transactionId,
             Amount = request.Amount,
             Currency = request.Currency,
-            CustomerEmail = request.CustomerEmail
-        }, "payment.initiated");
-
-        _logger.LogInformation($"Payment initiated for {request.CustomerEmail}, Transaction ID: {transactionId}");
-        await _eventLogService.AddLogAsync("Payment Initiated", $"Payment initiated for {request.CustomerEmail}, Transaction ID: {transactionId}");
-
-        return new PaymentResponseDto
-        {
-            TransactionId = transactionId,
-            Message = "Payment processing started."
+            Status = "Initiated",
+            CreatedAt = DateTime.UtcNow,
+            PaymentMethod = request.PaymentMethod,
+            UserId = _jwtHelper.GetUserIdFromToken()
         };
+
+        try
+        {
+            await _transactionRepository.AddTransactionAsync(transaction);
+
+            await _publisher.PublishEventAsync(new PaymentInitiatedEvent
+            {
+                TransactionId = transactionId,
+                Amount = request.Amount,
+                Currency = request.Currency,
+                CustomerEmail = request.CustomerEmail
+            }, "payment.retrying");
+
+            _logger.LogInformation($"Retrying payment process for Transaction ID: {transactionId}");
+            await _eventLogService.AddLogAsync("Payment Initiated", $"Retrying payment process for Transaction ID: {transactionId}");
+
+            return new PaymentResponseDto
+            {
+                TransactionId = transactionId,
+                Message = "Retrying Payment processing."
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing payment");
+            throw;
+        }
     }
     private bool IsValidPaymentRequest(PaymentRequestDto request, out string validationMessage)
     {

@@ -1,6 +1,7 @@
 ﻿using RabbitMQ.Client;
 using System.Text.Json;
 using System.Text;
+using payment_gateway_backend.Models.Payment;
 
 namespace payment_gateway_backend.Configurations;
 
@@ -31,6 +32,16 @@ public class Publisher : IAsyncDisposable
         await _channel.BasicPublishAsync(
             exchange: _exchangeName,
             routingKey: eventType,
+            body: body);
+    }
+    public async Task PublishFailureEvent(PaymentFailureEvent failureEvent)
+    {
+        var message = JsonSerializer.Serialize(failureEvent);
+        var body = Encoding.UTF8.GetBytes(message);
+
+        await _channel.BasicPublishAsync(
+            exchange: _exchangeName,
+            routingKey: "payment.failure",
             body: body);
     }
 

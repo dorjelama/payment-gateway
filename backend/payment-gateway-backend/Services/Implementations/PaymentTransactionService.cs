@@ -38,8 +38,7 @@ public class PaymentTransactionService : IPaymentTransactionService
         var transactions = await _transactionRepository.GetTransactionsAsync(
             filter.StartDate,
             filter.EndDate,
-            filter.Status,
-            filter.UserId);
+            filter.Status);
 
         return _mapper.Map<IEnumerable<PaymentTransactionDto>>(transactions);
     }

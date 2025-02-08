@@ -6,5 +6,6 @@ namespace payment_gateway_backend.Services.Interfaces
     public interface IPaymentProcessService
     {
         public Task<PaymentResponseDto> ProcessPaymentAsync(PaymentRequestDto request);
+        public Task<PaymentResponseDto> RetryProcessPaymentAsync(PaymentRequestDto request, Guid transactionId);
     }
 }

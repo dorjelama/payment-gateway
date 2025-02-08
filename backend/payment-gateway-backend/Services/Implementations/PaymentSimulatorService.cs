@@ -1,4 +1,5 @@
-﻿using payment_gateway_backend.Entities;
+﻿using Azure.Core;
+using payment_gateway_backend.Entities;
 using payment_gateway_backend.Models.Payment;
 using payment_gateway_backend.Services.Interfaces;
 
@@ -43,6 +44,28 @@ public class PaymentSimulatorService : IPaymentSimulator
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error simulating payment for {Email}", request.CustomerEmail);
+            throw;
+        }
+    }
+
+    public async Task<string> SimulateTransactionUpdateAsync(Guid transactionId)
+    {
+        try
+        {
+            Random random = new Random();
+            int delay = random.Next(3000, 10001);
+            await Task.Delay(delay);
+
+            string[] statuses = { "Success", "Failed" };
+            string status = statuses[_random.Next(statuses.Length)];
+
+            _logger.LogInformation("Simulated payment for transaction {transactionId} - Status: {Status}", transactionId, status);
+
+            return status;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogInformation("Simulated payment for transaction {transactionId} Failed", transactionId);
             throw;
         }
     }

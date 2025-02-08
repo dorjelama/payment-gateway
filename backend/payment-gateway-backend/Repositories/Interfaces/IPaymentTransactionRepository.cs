@@ -11,5 +11,5 @@ public interface IPaymentTransactionRepository
     public Task<PaymentTransaction> GetTransactionAsync(Guid transactionId);
 
     public Task<bool> UpdateTransactionStatusAsync(Guid transactionId, string newStatus);
-    public Task<IEnumerable<PaymentTransaction>> GetTransactionsAsync(DateTime? startDate, DateTime? endDate, string? status, Guid? userId);
+    public Task<IEnumerable<PaymentTransaction>> GetTransactionsAsync(DateTime? startDate, DateTime? endDate, string? status);
 }
