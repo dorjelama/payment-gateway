@@ -105,8 +105,7 @@
 </div>
 <div *ngIf="transactionId" class="tracking-link">
   <p>
-    Your transaction is being processed. You can track it using the ID:
-    <strong>{{ transactionId }}</strong>.
+    Your transaction is being processed.
   </p>
-  <a [routerLink]="['/track']" [queryParams]="{ id: transactionId }">Track Transaction</a>
+  <!-- <a [routerLink]="['/track']" [queryParams]="{ id: transactionId }">Track Transaction</a> -->
 </div>

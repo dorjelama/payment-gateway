@@ -34,6 +34,7 @@ export class PaymentFormComponent {
     });
   }
 
+
   onSubmit() {
     if (this.paymentForm.valid) {
       this.processing = true;
